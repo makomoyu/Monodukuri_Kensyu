@@ -210,8 +210,6 @@ class ORBJudge:
             print(f"{key}:{value}")
         print("="*20)
         
-
-
 def main():
     start = time.perf_counter()
 
