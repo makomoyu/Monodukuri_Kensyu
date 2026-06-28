@@ -205,28 +205,35 @@ class ORBJudge:
         return result
     
     def print(result_dict):
-        for key, value in hantei_result.items():
+        print("="*20)
+        for key, value in result_dict.items():
             print(f"{key}:{value}")
         print("="*20)
+        
 
 
-
-if __name__ == "__main__":
+def main():
     start = time.perf_counter()
+
+    # 画像の読み込み
     test_image_path = r".\test_image\kinoko\a.bmp" # 流動画像（仮）
     kinoko_template_image_path = r".\template_image\kinoko_template.bmp" # きのこの山部分を切り取った画像（テンプレート）
-
     test_image = cv2.imread(test_image_path)
     kinoko_template_image = cv2.imread(kinoko_template_image_path)
 
+    # 判定処理実行
     hantei_result = ORBJudge.result(test_image, kinoko_template_image)
-    ORBJudge.print(hantei_result)
-
     rotated_hantei_result = ORBJudge.result(test_image, ImageRotator.rotate(kinoko_template_image, 180))
+    
+    # 結果出力
     ORBJudge.print(hantei_result)
-
+    ORBJudge.print(rotated_hantei_result)
     end = time.perf_counter()
     print(f"合計処理時間：{end-start:.3f}")
+
+
+if __name__ == "__main__":
+    main()
 
 
     
