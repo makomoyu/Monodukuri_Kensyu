@@ -1,14 +1,11 @@
 import cv2
 import numpy as np
 import time
-
 from SaveImage import SaveImage
 from RotationClass import ImageRotator
 from ORBResultDataClass import ResultData
 
-
 SAVE_FOLDER_PATH = r".\check_image"
-
 
 def convert_to_gray_image(color_or_gray_image):
     """カラー画像ならグレースケールへ変換する"""
@@ -18,12 +15,10 @@ def convert_to_gray_image(color_or_gray_image):
         return cv2.cvtColor(color_or_gray_image, cv2.COLOR_BGR2GRAY)
     return color_or_gray_image.copy()
 
-
 def apply_clahe_to_gray_image(gray_image):
     """グレースケール画像にCLAHEを適用する"""
     clahe_filter = cv2.createCLAHE(clipLimit=2.0,tileGridSize=(8, 8))
     return clahe_filter.apply(gray_image)
-
 
 def preprocess_image_for_orb(input_image):
     """ORB特徴量抽出用に画像を前処理する"""
@@ -45,7 +40,6 @@ def create_orb_detector():
         patchSize=31
     )
 
-
 def detect_orb_keypoints_and_descriptors(input_image):
     """ORBのキーポイントと特徴量を取得する"""
     preprocessed_image = preprocess_image_for_orb(input_image)
@@ -53,12 +47,10 @@ def detect_orb_keypoints_and_descriptors(input_image):
     keypoints, descriptors = orb_detector.detectAndCompute(preprocessed_image,None)
     return keypoints, descriptors
 
-
 def match_descriptors_by_knn(reference_descriptors, target_descriptors):
     """KNNマッチングで特徴量を対応付ける"""
     brute_force_matcher = cv2.BFMatcher(cv2.NORM_HAMMING)
     return brute_force_matcher.knnMatch(reference_descriptors,target_descriptors,k=2)
-
 
 def filter_good_matches_by_lowe_ratio(knn_matches, ratio_threshold=0.75):
     """Loweのratio testで良いマッチのみ抽出する"""
@@ -73,14 +65,12 @@ def filter_good_matches_by_lowe_ratio(knn_matches, ratio_threshold=0.75):
             good_matches.append(best_match)
     return good_matches
 
-
 def create_empty_result(reference_keypoints, target_keypoints):
     """特徴量が取得できなかった場合の空結果を作る"""
     return ResultData(
         KeypointsRef=reference_keypoints,
         KeypointsTarget=target_keypoints
     )
-
 
 def create_low_match_result(reference_keypoints, target_keypoints, good_matches):
     """マッチ数が少ない場合の結果を作る"""
@@ -90,7 +80,6 @@ def create_low_match_result(reference_keypoints, target_keypoints, good_matches)
         KeypointsTarget=target_keypoints,
         GoodMatchList=good_matches
     )
-
 
 def create_homography_from_matches(reference_keypoints, target_keypoints, good_matches):
     """良いマッチからホモグラフィを算出する"""
@@ -103,7 +92,6 @@ def create_homography_from_matches(reference_keypoints, target_keypoints, good_m
         5.0
     )
 
-
 def extract_inlier_matches(good_matches, homography_mask):
     """RANSACのmaskからインライアのマッチのみ抽出する"""
     mask_boolean_array = homography_mask.ravel().astype(bool)
@@ -113,7 +101,6 @@ def extract_inlier_matches(good_matches, homography_mask):
         for match, is_inlier in zip(good_matches, mask_boolean_array)
         if is_inlier
     ]
-
 
 def calculate_orb_similarity_score(good_match_count, inlier_count):
     """インライア数と比率からORB類似度スコアを算出する"""
@@ -131,7 +118,6 @@ def calculate_orb_similarity_score(good_match_count, inlier_count):
         similarity_score *= good_match_count / 50.0
 
     return float(max(0.0, min(similarity_score, 1.0)))
-
 
 def create_success_result(reference_keypoints, target_keypoints, good_matches, inlier_matches):
     """ORB判定が成立した場合のResultDataを作成する"""
@@ -154,7 +140,6 @@ def create_success_result(reference_keypoints, target_keypoints, good_matches, i
         GoodMatchList=good_matches,
         InlierMatchList=inlier_matches
     )
-
 
 def calculate_orb_result(reference_image, target_image):
     """参照画像と対象画像のORB類似度結果を算出する"""
@@ -188,14 +173,12 @@ def calculate_orb_result(reference_image, target_image):
         inlier_matches
     )
 
-
 def normalize_reference_images(reference_images):
     """参照画像をリスト形式に統一する"""
     if isinstance(reference_images, list):
         return reference_images
 
     return [reference_images]
-
 
 def find_best_orb_result(target_image, reference_images):
     """複数の参照画像から最もスコアが高い結果を取得する"""
@@ -216,14 +199,12 @@ def find_best_orb_result(target_image, reference_images):
 
     return best_result, best_reference_image, best_reference_index
 
-
 def create_judgement_dictionary(is_ok, best_result):
     """判定結果の辞書を作成する"""
     return {
         "判定": "OK" if is_ok else "NG",
         "スコア": round(best_result.Score, 2)
     }
-
 
 def select_draw_matches(best_result, max_draw_count=100):
     """描画に使うインライアマッチを距離順で取得する"""
@@ -233,7 +214,6 @@ def select_draw_matches(best_result, max_draw_count=100):
     )
 
     return sorted_inlier_matches[:max_draw_count]
-
 
 def draw_orb_matches(reference_image, target_image, best_result):
     """ORBのマッチング結果画像を描画する"""
@@ -251,7 +231,6 @@ def draw_orb_matches(reference_image, target_image, best_result):
         flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
     )
 
-
 def create_result_text(is_ok, best_result):
     """結果画像に表示するテキストを作成する"""
     label = "OK" if is_ok else "NG"
@@ -264,7 +243,6 @@ def create_result_text(is_ok, best_result):
         f"ratio={best_result.InlierRatio:.3f}"
     )
 
-
 def draw_result_text_on_image(result_image, result_text):
     """結果画像の上部に判定テキストを描画する"""
     rectangle_width = min(result_image.shape[1], 1400)
@@ -272,7 +250,6 @@ def draw_result_text_on_image(result_image, result_text):
     cv2.putText(result_image,result_text,(20, 40),cv2.FONT_HERSHEY_SIMPLEX,1.0,(0, 255, 255),2)
 
     return result_image
-
 
 def create_orb_result_image(reference_image, target_image, best_result, is_ok):
     """ORB判定結果の可視化画像を作成する"""
@@ -282,7 +259,6 @@ def create_orb_result_image(reference_image, target_image, best_result, is_ok):
         result_image,
         result_text
     )
-
 
 def judge_image_by_orb(target_image, reference_images, threshold=0.8):
     """ORBスコアによって対象画像をOK/NG判定する"""
@@ -309,7 +285,6 @@ def judge_image_by_orb(target_image, reference_images, threshold=0.8):
     )
 
     return result_dictionary, result_image
-
 
 class ORBJudge:
     """ORB画像判定クラス"""
@@ -347,14 +322,14 @@ def load_required_images(test_image_path, template_image_path):
 def main():
     """メイン処理"""
     start_time = time.perf_counter()
+    # 画像の読み込み
     test_image_path = r".\test_image\kinoko\a.bmp"
     template_image_path = r".\template_image\kinoko_template.bmp"
     test_image, template_image = load_required_images(test_image_path,template_image_path)
 
+    # 結果出力
     normal_result = ORBJudge.result(test_image, template_image)
-    rotated_template_image = ImageRotator.rotate(template_image, 180)
-    rotated_result = ORBJudge.result(test_image, rotated_template_image)
-
+    rotated_result = ORBJudge.result(test_image, ImageRotator.rotate(template_image, 180))
     ORBJudge.print_result(normal_result)
     ORBJudge.print_result(rotated_result)
 
