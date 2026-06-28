@@ -189,7 +189,6 @@ def judge_by_orb(target_img, reference_imgs, threshold=0.8):
     return result_dict, output
 
 class ORBJudge:
-
     @staticmethod
     def result(target_color_image, reference_color_image):
         """ORBの結果取得"""
